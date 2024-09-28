@@ -1,0 +1,12 @@
+# Virtual Environment
+venv/
+
+# Logs or temp files
+*.log
+*.tmp
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
