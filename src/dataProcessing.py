@@ -1,6 +1,8 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.utils import resample
+import logging
 
 class DataProcessing:
     """
@@ -27,7 +29,13 @@ class DataProcessing:
         try:
             self.data = pd.read_csv(self.file_path)
         except FileNotFoundError:
-            print("File not found. Please check the file path.") # might want to change this 
+            logging.error("File not found. Please check the file path.")
+            raise
+        except pd.errors.EmptyDataError:
+            logging.error("File is empty. Please check the file.")
+            raise
+        except pd.errors.ParserError:
+            logging.error("Error parsing the csv file. Please check the format.")
             raise
         return self.data
 
@@ -40,7 +48,7 @@ class DataProcessing:
         """
         categorical_cols = []
         for column in self.data.columns:
-            if self.data[column].dtype == type(object) or self.data[column].nunique() < 20: # if its a pandas object or has less than 20 unique values
+            if pd.api.types.is_object_dtype(self.data[column]) or self.data[column].nunique() < 21:
                 categorical_cols.append(column)
         return categorical_cols
 
@@ -61,7 +69,7 @@ class DataProcessing:
 
         for column in categorical_cols:
             le = LabelEncoder() # create a label encoder
-            self.data[column] = le.fit_transform(self.data[column])a # fit and transform the column
+            self.data[column] = le.fit_transform(self.data[column]) # fit and transform the column
             self.label_encoders[column] = le # store the label encoder in the dictionary
 
 
@@ -86,9 +94,32 @@ class DataProcessing:
         - y_train (pd.Series) - training labels
         - y_test (pd.Series) - testing labels
         """
+        if target_col not in self.data.columns:
+            raise ValueError("Target column not found. Please check the column name")
         X = self.data.drop(target_col, axis=1)
         y = self.data[target_col]
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
         return X_train, X_test, y_train, y_test
+
+    def balance_data(self, target_col):
+        """
+        Balances the data by oversampling the minority class.
+
+        Input:
+        - target_col (str) - name of the target column
+        """
+        if target_col not in self.data.columns:
+            raise ValueError("Target column not found. Please check the column name")
+        
+        majority_class = self.data[self.data[target_col] == self.data[target_col].mode()[0]]
+        minority_class = self.data[self.data[target_col] != self.data[target_col].mode()[0]]
+
+        minority_class_oversampled = resample(minority_class, 
+                                            replace=True, 
+                                            n_samples=len(majority_class),
+                                            random_state=42)
+        
+        self.data = pd.concat([majority_class, minority_class_oversampled])
+        return self.data
