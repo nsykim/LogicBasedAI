@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.utils import resample
 import logging
+from io import StringIO
 
 class DataProcessing:
     """
@@ -51,7 +52,11 @@ class DataProcessing:
             pd.errors.ParserError: If there is an error parsing the CSV file.
         """
         try:
-            self.data = pd.read_csv(self.file_path)
+            if isinstance(self.file_path, StringIO):
+                self.file_path.seek(0)
+                self.data = pd.read_csv(self.file_path)
+            else:
+                self.data = pd.read_csv(self.file_path)
             self.data.columns = self.data.columns.str.strip() # remove leading/trailing whitespaces from column names
         except FileNotFoundError as e:
             logging.error(f"File not found: {self.file_path}")
