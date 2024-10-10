@@ -52,15 +52,10 @@ class DataProcessing:
         """
         try:
             self.data = pd.read_csv(self.file_path)
-        except FileNotFoundError:
-            logging.error("File not found. Please check the file path.")
-            raise
-        except pd.errors.EmptyDataError:
-            logging.error("File is empty. Please check the file.")
-            raise
-        except pd.errors.ParserError:
-            logging.error("Error parsing the csv file. Please check the format.")
-            raise
+            self.data.columns = self.data.columns.str.strip() # remove leading/trailing whitespaces from column names
+        except FileNotFoundError as e:
+            logging.error(f"File not found: {self.file_path}")
+            raise FileNotFoundError(f"File not found: {self.file_path}")
         return self.data
 
 
@@ -97,10 +92,10 @@ class DataProcessing:
         # clean the data (fill missing values)
         for column in self.data.columns: # for each column in the dataframe
             if column in categorical_cols: # if the column is categorical
-                self.data[column].fillna('Unknown', inplace=True) # fill missing values with 'Unknown'
+                self.data[column] = self.data[column].fillna('Unknown') # fill missing values with 'Unknown'
             else:
                 # if numerical and empty, fill with column mean
-                self.data[column].fillna(self.data[column].mean(),  inplace=True)
+                self.data[column] = self.data[column].fillna(self.data[column].mean())
 
         for column in categorical_cols:
             le = LabelEncoder() # create a label encoder
