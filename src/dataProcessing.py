@@ -6,14 +6,29 @@ import logging
 
 class DataProcessing:
     """
-    DataProcessing class is used to process and clean data retrieved from a csv file.
+    DataProcessing is a class for handling and preprocessing data from a CSV file. It provides methods to load data, detect categorical columns, preprocess the data, split the data into training and testing sets, and balance the dataset.
+    Methods:
+        __init__(file_path):
+        load_data():
+        detect_categorical_columns():
+        preprocess():
+            Preprocesses the data by filling missing values, encoding categorical columns, and normalizing numerical columns.
+        split_data(target_col, test_size=0.2, random_state=42):
+        balance_data(target_col):
     """
+
     def __init__(self, file_path):
         """
-        Constructor for DataProcessing class
-        Initializes the file_path, data, label_encoders, and scaler attributes.
-        
-        Input: file_path (str) - path to the csv file
+        Initializes the DataProcessing class with the given file path.
+
+        Args:
+            file_path (str): The path to the data file.
+
+        Attributes:
+            file_path (str): The path to the data file.
+            data (None): Placeholder for the data to be loaded.
+            label_encoders (dict): Dictionary to store label encoders for each column.
+            scaler (StandardScaler): Scaler to normalize the data to have a mean of 0 and a standard deviation of 1.
         """
         self.file_path = file_path
         self.data = None
@@ -22,9 +37,18 @@ class DataProcessing:
 
     def load_data(self):
         """
-        Loads the data from the csv file into a pandas dataframe.
+        Loads data from a CSV file specified by the file path.
 
-        Output: data (pd.DataFrame) - dataframe containing the data from the csv file
+        This method attempts to read a CSV file into a DataFrame. If the file is not found,
+        empty, or cannot be parsed, appropriate error messages are logged and exceptions are raised.
+
+        Returns:
+            pd.DataFrame: The data loaded from the CSV file.
+
+        Raises:
+            FileNotFoundError: If the file specified by the file path does not exist.
+            pd.errors.EmptyDataError: If the file is empty.
+            pd.errors.ParserError: If there is an error parsing the CSV file.
         """
         try:
             self.data = pd.read_csv(self.file_path)
@@ -42,10 +66,13 @@ class DataProcessing:
 
     def detect_categorical_columns(self):
         """
-        Detects the categorical columns in the dataframe.
-
-        Output: categorical_cols (list) - list of column names that are categorical
+        Detects and returns a list of categorical columns in the dataset.
+        This method iterates through all columns in the dataset and identifies
+        columns that are either of object data type or have fewer than 21 unique values.
+        Returns:
+            list: A list of column names that are considered categorical.
         """
+
         categorical_cols = []
         for column in self.data.columns:
             if pd.api.types.is_object_dtype(self.data[column]) or self.data[column].nunique() < 21:
@@ -54,9 +81,17 @@ class DataProcessing:
 
     def preprocess(self):
         """
-        Preprocesses the data by cleaning, encoding, and scaling.
-        Automatically detects non-catergorical (non-numeric) columns 
+        Preprocesses the data by performing the following steps:
+        1. Detects categorical columns.
+        2. Fills missing values:
+           - For categorical columns, fills with 'Unknown'.
+           - For numerical columns, fills with the column mean.
+        3. Encodes categorical columns using Label Encoding.
+        4. Normalizes numerical columns using the provided scaler.
+        Returns:
+            pd.DataFrame: The preprocessed data.
         """
+
         categorical_cols = self.detect_categorical_columns() # detect the categorical columns
 
         # clean the data (fill missing values)
@@ -81,18 +116,22 @@ class DataProcessing:
 
     def split_data(self, target_col, test_size=0.2, random_state=42):
         """
-        Splits the data into training and testing sets.
+        Splits the dataset into training and testing sets.
 
-        Input:
-        - target_col (str) - name of the target column
-        - test_size (float) - proportion of the data to include in the test split from 0-1
-        - random_state (int) - random seed
+        Parameters:
+        target_col (str): The name of the target column in the dataset.
+        test_size (float, optional): The proportion of the dataset to include in the test split. Default is 0.2.
+        random_state (int, optional): Controls the shuffling applied to the data before applying the split. Default is 42.
 
-        Output:
-        - X_train (pd.DataFrame) - training data
-        - X_test (pd.DataFrame) - testing data
-        - y_train (pd.Series) - training labels
-        - y_test (pd.Series) - testing labels
+        Returns:
+        tuple: A tuple containing four elements:
+            - X_train (DataFrame): The training input samples.
+            - X_test (DataFrame): The testing input samples.
+            - y_train (Series): The training target values.
+            - y_test (Series): The testing target values.
+
+        Raises:
+        ValueError: If the target column is not found in the dataset.
         """
         if target_col not in self.data.columns:
             raise ValueError("Target column not found. Please check the column name")
@@ -105,11 +144,15 @@ class DataProcessing:
 
     def balance_data(self, target_col):
         """
-        Balances the data by oversampling the minority class.
-
-        Input:
-        - target_col (str) - name of the target column
+        Balances the dataset by oversampling the minority class to match the size of the majority class.
+        Parameters:
+        target_col (str): The name of the target column to balance.
+        Returns:
+        pd.DataFrame: A new DataFrame with balanced classes.
+        Raises:
+        ValueError: If the target column is not found in the DataFrame.
         """
+
         if target_col not in self.data.columns:
             raise ValueError("Target column not found. Please check the column name")
         

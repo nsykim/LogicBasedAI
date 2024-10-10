@@ -5,17 +5,33 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 
 class RuleBasedModel:
     """
-    Logic programming model
+    RuleBasedModel is a class for creating and solving linear programming models using the PuLP library. 
+    It allows users to define decision variables, set objective functions, add constraints, and solve the model.
+    Methods:
+        __init__(self, name="Rule Based Model", sense=pulp.LpMaximize):
+            Initializes the RuleBasedModel with a given name and optimization direction.
+        set_logging(self, level=logging.INFO):
+        define_vars(self, var_dict):
+        set_objective(self, obj_coeffs):
+        add_constraints(self, constraints):
+        solve(self):
+        get_results(self):
+        run(self, var_dict, obj_coeffs, constraints):
+            Runs the model by defining variables, setting the objective function, adding constraints, solving the model, and returning the results.
     """
 
     def __init__ (self, name="Rule Based Model", sense=pulp.LpMaximize):
         """
-        Constructor for LPModel class
-        Initializes the model attribute.
+        Initializes a new instance of the LPModel class.
 
-        Input:
-            - name (str) - name of the model
-            - sense (obj) - optimization direction (pulp.LpMaximize or pulp.LpMinimize)
+        Args:
+            name (str): The name of the linear programming model. Defaults to "Rule Based Model".
+            sense (pulp.LpSense): The sense of the optimization problem (e.g., pulp.LpMaximize or pulp.LpMinimize). Defaults to pulp.LpMaximize.
+
+        Attributes:
+            model (pulp.LpProblem): The linear programming problem instance.
+            variables (dict): A dictionary to store the variables of the model.
+            objective_value (float or None): The value of the objective function after solving the model. Initialized to None.
         """
         self.model = pulp.LpProblem(name, sense)
         self.variables = {}
@@ -24,10 +40,12 @@ class RuleBasedModel:
     
     def set_logging(self, level=logging.INFO):
         """
-        Sets the logging level for the model.
-
-        Input:
-            - level (str) - logging level (logging.INFO, logging.DEBUG, logging.WARNING, logging.ERROR, logging.CRITICAL)
+        Sets the logging level for the application.
+        Parameters:
+        level (str): The logging level to set. Default is logging.INFO. 
+                     Valid levels are 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
+        Returns:
+        bool: True if the logging level was set successfully, False otherwise.
         """
         num_level = getattr(logging, level.upper(), None)
         if not isinstance(num_level, int):
@@ -39,11 +57,18 @@ class RuleBasedModel:
     
     def define_vars(self, var_dict):
         """
-        Defines the decision variables for the model.
-        The variables that the model will solve for.
+        Define variables for the model using the provided dictionary.
 
-        Input:
-            - var_dict (dict) - dictionary with type {var_name: (low, up, cat)}
+        Parameters:
+        var_dict (dict): A dictionary where keys are variable names and values are tuples 
+                 containing the lower bound, upper bound, and category of the variable.
+
+        Returns:
+        bool: False if the input is invalid, otherwise None.
+
+        The method logs an error and returns False if var_dict is not a dictionary or if any 
+        of the bounds are not tuples of length 3. Otherwise, it defines the variables using 
+        the provided bounds and logs the defined variables.
         """
         if not isinstance(var_dict, dict):
             logging.error("var_dict must be a dictionary")
@@ -60,12 +85,13 @@ class RuleBasedModel:
 
     def set_objective(self, obj_coeffs):
         """
-        Sets the objective function for the model.
-        The function that the model will minimize or maximize.
-
-        Input:
-            - obj_coeffs (dict) - dictionary with type {var_name: coeff} where coeff is the coefficient of the variable in the objective function
+        Sets the objective function for the linear programming model.
+        Parameters:
+        obj_coeffs (dict): A dictionary where keys are variable names (str) and values are their corresponding coefficients (float or int).
+        Returns:
+        bool: Returns False if obj_coeffs is not a dictionary or if any variable name in obj_coeffs is not defined in the model. Otherwise, sets the objective function and logs the action.
         """
+
         if not isinstance(obj_coeffs, dict):
             logging.error("obj_coeffs must be a dictionary")
             return False
@@ -79,15 +105,27 @@ class RuleBasedModel:
 
     def add_constraints(self, constraints):
         """
-        Adds constraints to the model.
-        Constraints that the decision variables must satisfy (rules).
-
-        Input:
-            - constraints (list) - list of tuples to be added to the model, where each tuple has form:
-                - constaint_expr (pulp.LpConstraint) - expression of the constraint
-                - sense: (obj) - sense of the constraint (pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ)
-                - rhs: (float) - right hand side of the constraint
+        Adds a list of constraints to the model.
+        Parameters:
+        constraints (list): A list of constraints where each constraint is a tuple of the form 
+                    (constraint_expr, sense, rhs). 
+                    - constraint_expr (dict): A dictionary representing the linear expression 
+                      with variable names as keys and their coefficients as values.
+                    - sense (pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ): 
+                      The sense of the constraint (<=, >=, ==).
+                    - rhs (int, float): The right-hand side value of the constraint.
+        Returns:
+        bool: True if constraints are added successfully, False otherwise.
+        Logs:
+        - Error if constraints is not a list.
+        - Error if any constraint is not a tuple of length 3.
+        - Error if constraint_expr is not a dictionary.
+        - Error if any variable in constraint_expr is not defined in the model.
+        - Error if sense is not one of pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ.
+        - Error if rhs is not an integer or float.
+        - Info when constraints are added successfully.
         """
+
         if not isinstance(constraints, list):
             logging.error("constraints must be a list")
             return False
@@ -115,7 +153,15 @@ class RuleBasedModel:
 
     def solve(self):
         """
-        Solves the model.
+        Solves the optimization model and updates the objective value.
+
+        This method attempts to solve the optimization model defined in the instance.
+        If the model is solved successfully, the objective value is updated and a success
+        message is logged. If an error occurs during the solving process, an error message
+        is logged with the exception details.
+
+        Raises:
+            Exception: If an error occurs during the solving process.
         """
         try:
             self.model.solve()
@@ -126,10 +172,15 @@ class RuleBasedModel:
     
     def get_results(self):
         """
-        Returns the results of the model.
+        Retrieves the results of the model's variables.
 
-        Output:
-            - dict with type {var_name: value} - dictionary with the values of the decision variables
+        This method attempts to extract the variable names and their corresponding values
+        from the model and returns them as a dictionary. If an error occurs during this 
+        process, it logs the error and returns None.
+
+        Returns:
+            dict: A dictionary where the keys are variable names and the values are 
+              the variable values, or None if an error occurs.
         """
         try: 
             results = {v.name: v.varValue for v in self.model.variables()}
@@ -141,18 +192,15 @@ class RuleBasedModel:
 
     def run(self, var_dict, obj_coeffs, constraints):
         """
-        Runs the model.
+        Executes the optimization model with the given variables, objective coefficients, and constraints.
 
-        Input:
-            - var_dict (dict) - dictionary with type {var_name: (low, up, cat)}
-            - obj_coeffs (dict) - dictionary with type {var_name: coeff}
-            - constraints (list) - list of tuples to be added to the model, where each tuple has form:
-                - constaint_expr (pulp.LpConstraint) - expression of the constraint
-                - sense: (obj) - sense of the constraint (pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ)
-                - rhs: (float) - right hand side of the constraint
-            
-        Output:
-            - dict with type {var_name: value} - dictionary with the values of the decision variables
+        Parameters:
+        var_dict (dict): A dictionary where keys are variable names and values are their respective bounds or initial values.
+        obj_coeffs (dict): A dictionary where keys are variable names and values are their respective coefficients in the objective function.
+        constraints (list): A list of constraints to be added to the model. Each constraint should be represented in a suitable format for the solver.
+
+        Returns:
+        dict or None: The results of the optimization if successful, otherwise None.
         """
         if not self.define_vars(var_dict):
             logging.error("Error defining variables")
