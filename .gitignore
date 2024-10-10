@@ -4,6 +4,7 @@ venv/
 # Logs or temp files
 *.log
 *.tmp
+*.json
 
 # Environment variables
 .env
