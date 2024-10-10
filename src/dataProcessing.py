@@ -70,7 +70,7 @@ class DataProcessing:
 
         categorical_cols = []
         for column in self.data.columns:
-            if pd.api.types.is_object_dtype(self.data[column]) or self.data[column].nunique() < 21:
+            if pd.api.types.is_object_dtype(self.data[column]) or self.data[column].nunique() < 21 and not pd.api.types.is_numeric_dtype(self.data[column]):
                 categorical_cols.append(column)
         return categorical_cols
 
