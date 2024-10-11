@@ -71,3 +71,6 @@ results = model.get_results()
 print("Results:", results)
 ```
 
+### Test Coverage
+- Run tests in test folder with: ```coverage run -m unittest discover -s test```
+- Get coverage report with : ```coverage report -m ```
