@@ -4,9 +4,19 @@ venv/
 # Logs or temp files
 *.log
 *.tmp
+*.json
 
 # Environment variables
 .env
 
 # VS Code
 .vscode/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# node_modules
+node_modules/
+
+# Codoe Coverage Report
+.coverage

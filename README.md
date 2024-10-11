@@ -10,7 +10,7 @@ Mainstream machine learning methods lack interpretability, explainability, incre
 
 ### Set up - Install Depenencies
 ```bash
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Data Processing
