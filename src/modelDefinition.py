@@ -144,7 +144,7 @@ class RuleBasedModel:
             if sense not in [pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ]:
                 logging.error(f"Invalid sense: {sense}")
                 return False
-            if not isintance(rhs, (int, float)):
+            if not isinstance(rhs, (int, float)):
                 logging.error(f"Invalid rhs: {rhs}")
                 return False
 
