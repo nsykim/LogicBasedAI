@@ -18,12 +18,13 @@ class DataProcessing:
         balance_data(target_col):
     """
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, categorical_columns=None):
         """
         Initializes the DataProcessing class with the given file path.
 
         Args:
             file_path (str): The path to the data file.
+            categorical_cols (list): A list of column names to be treated as categorical. Default is None.
 
         Attributes:
             file_path (str): The path to the data file.
@@ -33,6 +34,7 @@ class DataProcessing:
         """
         self.file_path = file_path
         self.data = None
+        self.categorical_columns = categorical_columns if categorical_columns else []
         self.label_encoders = {} # dictionary to store label encoders for each column 
         self.scaler = StandardScaler() #normalizes the data to have a mean of 0 and a standard deviation of 1
 
@@ -67,16 +69,18 @@ class DataProcessing:
     def detect_categorical_columns(self):
         """
         Detects and returns a list of categorical columns in the dataset.
-        This method iterates through all columns in the dataset and identifies
-        columns that are either of object data type or have fewer than 21 unique values.
+
+        This method identifies columns with data type 'object' as categorical.
+        Additionally, it includes all other columns in the dataset to the list of categorical columns.
+
         Returns:
-            list: A list of column names that are considered categorical.
+            list: A list of column names identified as categorical.
         """
 
-        categorical_cols = []
-        for column in self.data.columns:
-            if pd.api.types.is_object_dtype(self.data[column]) or self.data[column].nunique() < 21 and not pd.api.types.is_numeric_dtype(self.data[column]):
-                categorical_cols.append(column)
+        categorical_cols =  self.data.select_dtypes(include=['object']).columns.tolist()
+        for col in self.categorical_columns:
+            if col not in categorical_cols:
+                categorical_cols.append(col)
         return categorical_cols
 
     def preprocess(self):
@@ -98,9 +102,11 @@ class DataProcessing:
         for column in self.data.columns: # for each column in the dataframe
             if column in categorical_cols: # if the column is categorical
                 self.data[column] = self.data[column].fillna('Unknown') # fill missing values with 'Unknown'
+                self.data[column] = self.data[column].astype(str) # convert to string
             else:
                 # if numerical and empty, fill with column mean
                 self.data[column] = self.data[column].fillna(self.data[column].mean())
+                self.data[column] = self.data[column].astype(float) 
 
         for column in categorical_cols:
             le = LabelEncoder() # create a label encoder
