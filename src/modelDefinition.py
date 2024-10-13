@@ -20,7 +20,7 @@ class RuleBasedModel:
             Runs the model by defining variables, setting the objective function, adding constraints, solving the model, and returning the results.
     """
 
-    def __init__ (self, name="Rule Based Model", sense=pulp.LpMaximize):
+    def __init__ (self, name="Rule_Based_Model", sense=pulp.LpMaximize):
         """
         Initializes a new instance of the LPModel class.
 
@@ -54,6 +54,7 @@ class RuleBasedModel:
         
         logging.getLogger().setLevel(num_level)
         logging.info(f"Set logging level to {level}")
+        return True
     
     def define_vars(self, var_dict):
         """
@@ -105,51 +106,54 @@ class RuleBasedModel:
 
     def add_constraints(self, constraints):
         """
-        Adds a list of constraints to the model.
+        Adds constraints to the linear programming model.
         Parameters:
-        constraints (list): A list of constraints where each constraint is a tuple of the form 
-                    (constraint_expr, sense, rhs). 
-                    - constraint_expr (dict): A dictionary representing the linear expression 
-                      with variable names as keys and their coefficients as values.
-                    - sense (pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ): 
-                      The sense of the constraint (<=, >=, ==).
-                    - rhs (int, float): The right-hand side value of the constraint.
+        constraints (list): A list of constraints to be added to the model. Each constraint should be represented as a tuple (constraint_expr, sense, rhs).
         Returns:
-        bool: True if constraints are added successfully, False otherwise.
-        Logs:
-        - Error if constraints is not a list.
-        - Error if any constraint is not a tuple of length 3.
-        - Error if constraint_expr is not a dictionary.
-        - Error if any variable in constraint_expr is not defined in the model.
-        - Error if sense is not one of pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ.
-        - Error if rhs is not an integer or float.
-        - Info when constraints are added successfully.
-        """
+        bool: Returns False if constraints is not a list or if any constraint expression is invalid. Otherwise, adds the constraints to the model and logs the action."""
 
         if not isinstance(constraints, list):
             logging.error("constraints must be a list")
             return False
-        
-        for constraint in constraints:
-            if not isinstance(constraint, tuple) or len(constraint) != 3:
-                logging.error(f"Invalid constraint: {constraint}")
-            constraint_expr, sense, rhs = constraint
-            if not isinstance(constraint_expr, dict):
-                logging.error(f"Invalid constraint expression: {constraint_expr}")
-                return False
-            for var_name in constraint_expr.keys():
-                if var_name not in self.variables:
-                    logging.error(f"Variable {var_name} not defined")
-                    return False
-            if sense not in [pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ]:
-                logging.error(f"Invalid sense: {sense}")
-                return False
-            if not isinstance(rhs, (int, float)):
-                logging.error(f"Invalid rhs: {rhs}")
-                return False
 
-            self.model+= (pulp.lpSum([coeff * self.variables[var] for var, coeff in constraint_expr.items()]), sense, rhs)
+        try:
+            for constraint in  constraints:
+                if not isinstance(constraint, tuple) or len(constraint) != 3:
+                    logging.error("Each contraint must be a tuple of length 3")
+                    return False
+
+                constraint_expr, sense, rhs = constraint
+
+                if not isinstance(constraint_expr, dict):
+                    logging.error("Constraint expression must be a dictionary")
+                    return False
+
+                for var in constraint_expr.keys():
+                    if var not in self.variables:
+                        logging.error(f"Variable {var} not defined")
+                        return False
+
+                if sense not in [pulp.LpConstraintLE, pulp.LpConstraintGE, pulp.LpConstraintEQ]:
+                    logging.error("Invalid constraint sense")
+                    return False
+
+                if not isinstance(rhs, (int, float)):
+                    logging.error("Invalid right-hand side value")
+                    return False
+
+                if sense == pulp.LpConstraintLE:
+                    self.model += pulp.lpSum([self.variables[var]*coeff for var, coeff in constraint_expr.items()]) <= rhs
+                elif sense == pulp.LpConstraintGE:
+                    self.model += pulp.lpSum([self.variables[var]*coeff for var, coeff in constraint_expr.items()]) >= rhs
+                elif sense == pulp.LpConstraintEQ:
+                    self.model += pulp.lpSum([self.variables[var]*coeff for var, coeff in constraint_expr.items()]) == rhs
+                
             logging.info("Constraints added successfully")
+            return True
+        except KeyError:
+            logging.error("Invalid constraint expression")
+            return False 
+
 
     def solve(self):
         """
@@ -202,10 +206,10 @@ class RuleBasedModel:
         Returns:
         dict or None: The results of the optimization if successful, otherwise None.
         """
-        if not self.define_vars(var_dict):
+        if not self.define_vars(var_dict) is None:
             logging.error("Error defining variables")
             return None
-        if not self.set_objective(obj_coeffs):
+        if not self.set_objective(obj_coeffs) is None:
             logging.error("Error setting objective function")
             return None
         if not self.add_constraints(constraints):
